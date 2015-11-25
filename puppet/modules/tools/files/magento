@@ -1,0 +1,57 @@
+#!/bin/bash
+if [ -z $1 ]
+then
+    echo "Usage: magento [install|update|clean]"
+    exit
+else
+    COMMAND=$1
+fi
+
+DB_USER='magento'
+DB_PASS='123123q'
+DB='magento'
+ROOT='/var/www/html'
+HOST="magetwo.vg"
+MYSQL_HOST=localhost
+DIR_NAME='magetwo.vg'
+PFX=''
+cd ${ROOT}
+
+export PHP_IDE_CONFIG="serverName=magetwo.my"
+export XDEBUG_CONFIG="idekey=PHPSTORM"
+export XDEBUG_CONFIG="remote_enable=1"
+
+echo "Start ${COMMAND}"
+
+if [ ${COMMAND} = 'install' ]
+then
+    cd ${DIR_NAME}
+    mysql -u${DB_USER} -p${DB_PASS} -h${MYSQL_HOST} -e "DROP DATABASE IF EXISTS ${DB}; CREATE DATABASE ${DB};"
+    rm -rf ./var/[a-z]*
+    rm -rf ./app/etc/config.php
+    rm -rf ./app/etc/env.php
+    rm -rf ./pub/static/*
+    php bin/magento setup:install --db-host=localhost --db-name=$DB --db-user=${DB_USER} --db-host=${MYSQL_HOST} --db-password=${DB_PASS} --backend-frontname=backend --admin-user=admin --admin-password=123123q --admin-email="admin@example.com" --admin-firstname=Store --admin-lastname=Owner --base-url="http://$HOST/" --language=en_US --timezone="America/Los_Angeles" --currency=USD --use-rewrites=1 --use-secure=0 --admin-use-security-key=0 --key="EncryptionKey"
+
+    mysql -u${DB_USER} -p${DB_PASS} -h${MYSQL_HOST} -e "UPDATE ${DB}.${PFX}core_config_data SET value = 0 WHERE path = 'admin/security/use_form_key';"
+    mysql -u${DB_USER} -p${DB_PASS} -h${MYSQL_HOST} -e "INSERT INTO ${DB}.${PFX}core_config_data(path, value) VALUES('admin/security/session_lifetime', 86400);"
+
+    #mysqldump -u${DB_USER} -p${DB_PASS} -h${MYSQL_HOST} --add-drop-database --databases ${DB} > /Users/yonischenko/work/sql/magetwo.sql
+fi
+
+if [ ${COMMAND} = 'update' ]
+then
+    cd ${DIR_NAME}
+    php bin/magento setup:upgrade
+fi
+
+if [ ${COMMAND} = 'clean' ]
+then
+    cd ${DIR_NAME}
+    mysql -u${DB_USER} -p${DB_PASS} -h${MYSQL_HOST} -e "DROP DATABASE IF EXISTS ${DB}; CREATE DATABASE ${DB};"
+    rm -rf ./var/[a-z]*
+    rm -rf ./app/etc/config.php
+    rm -rf ./app/etc/env.php
+    rm -rf ./pub/static/*
+    rm -rf ./var/.maintenance.flag
+fi
