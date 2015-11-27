@@ -27,8 +27,26 @@ class { '::mysql::server':
 class { 'php':
     package_prefix => 'php-',
     manage_repos => true,
-    extensions => { 'mcrypt' => {}, 'intl' => {}, 'gd' => {}, 'mbstring' => {}, 'pdo' => {}, 'mysql' => {} },
-    settings => {'always_populate_raw_post_data' => -1, 'date.timezone' => 'UTC'}
+    extensions => {
+        'mcrypt' => {},
+        'intl' => {},
+        'gd' => {},
+        'mbstring' => {},
+        'pdo' => {},
+        'mysql' => {},
+        'pecl-xdebug' => {
+            'settings_prefix' => 'xdebug',
+            'settings' => {
+                'remote_enable' => 1,
+                'remote_host' => 'hostmachine'
+            }
+        }
+    },
+    settings => {
+        'always_populate_raw_post_data' => -1,
+        'date.timezone' => 'UTC',
+        'session.save_path' => '/tmp'
+    }
 }
 
 
@@ -74,3 +92,5 @@ service { 'iptables':
     enable => false,
     ensure => false
 }
+
+package {'git': ensure => present}
