@@ -84,7 +84,8 @@ apache::vhost { 'magetwo.vg':
     directory_allow_override => 'All',
     directory_options => 'FollowSymLinks Multiviews',
     require => Package['httpd'],
-    template => 'custom/virtualhost/vhost-cgi.conf.erb'
+    template => 'custom/virtualhost/vhost-cgi.conf.erb',
+    env_variables => ['PHP_IDE_CONFIG serverName=magetwo.vg', 'XDEBUG_CONFIG idekey=PHPSTORM']
 }
 
 include baseconfig, tools, yum, apache, php
