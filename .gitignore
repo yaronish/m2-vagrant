@@ -1,1 +1,8 @@
 .vagrant
+puppet/modules/apache
+puppet/modules/mysql
+puppet/modules/php
+puppet/modules/puppi
+puppet/modules/puppetlabs-inifile
+puppet/modules/stdlibs
+puppet/modules/yum

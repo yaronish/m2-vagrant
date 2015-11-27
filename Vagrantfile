@@ -13,7 +13,6 @@ VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.trigger.before :up do
-    info "Clonning git repos..."
     run  "bash ./get-libs.sh"
   end
 

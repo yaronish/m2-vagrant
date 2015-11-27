@@ -38,7 +38,8 @@ class { 'php':
             'settings_prefix' => 'xdebug',
             'settings' => {
                 'remote_enable' => 1,
-                'remote_host' => 'hostmachine'
+                'remote_host' => 'hostmachine',
+                'idekey' => 'PHPSTORM'
             }
         }
     },

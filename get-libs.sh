@@ -20,7 +20,7 @@ if [ ! -d "puppi" ]; then
 git clone https://github.com/example42/puppi.git
 fi
 
-if [ ! -d "stdlib" ]; then
+if [ ! -d "stdlibs" ]; then
 git clone https://github.com/puppetlabs/puppetlabs-stdlib.git stdlibs
 fi
 
