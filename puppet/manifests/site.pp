@@ -1,4 +1,4 @@
-Exec { path => [ "/bin/", "/sbin/" , "/usr/bin/", "/usr/sbin/" ] }
+Exec { path => [ "/bin/", "/sbin/" , "/usr/bin/", "/usr/sbin/", "/usr/local/bin" ] }
 
 stage { 'pre':
     before => Stage['main']
@@ -39,19 +39,46 @@ class { 'php':
             'settings' => {
                 'remote_enable' => 1,
                 'remote_host' => 'hostmachine',
-                'idekey' => 'PHPSTORM'
+                'idekey' => 'PHPSTORM',
+                'max_nesting_level' => 200
             }
         }
     },
     settings => {
         'always_populate_raw_post_data' => -1,
         'date.timezone' => 'UTC',
-        'session.save_path' => '/tmp'
+        'session.save_path' => '/tmp',
+        'memory_limit' => '2G'
     }
 }
-
+->
+exec { 'phpcpd':
+    command => 'composer global require --dev "sebastian/phpcpd=*"',
+    environment => ['COMPOSER_HOME=/home/vagrant/.composer'],
+    cwd => '/home/vagrant/.composer',
+    path    => '/usr/bin:/usr/local/bin:/home/vagrant/.composer/vendor/bin/',
+    user => 'vagrant',
+    group => 'vagrant'
+}
+->
+exec { 'phpunit':
+    command => 'composer global require --dev "phpunit/phpunit=4.4.*"',
+    environment => ['COMPOSER_HOME=/home/vagrant/.composer'],
+    cwd => '/home/vagrant/.composer',
+    path    => '/usr/bin:/usr/local/bin:/home/vagrant/.composer/vendor/bin/',
+    user => 'vagrant',
+    group => 'vagrant'
+}
 
 mysql::db { 'magento':
+    user => 'root',
+    password => '',
+    host => 'localhost',
+    grant => 'ALL',
+    require => [Package['mysql-community-server']]
+}
+
+mysql::db { 'magento_integration_tests':
     user => 'root',
     password => '',
     host => 'localhost',
