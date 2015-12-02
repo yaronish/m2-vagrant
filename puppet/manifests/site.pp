@@ -34,6 +34,7 @@ class { 'php':
         'mbstring' => {},
         'pdo' => {},
         'mysql' => {},
+        'soap' => {},
         'pecl-xdebug' => {
             'settings_prefix' => 'xdebug',
             'settings' => {
@@ -52,13 +53,19 @@ class { 'php':
     }
 }
 ->
+exec { 'composer-update':
+    command => 'composer self-update',
+    environment => ['HOME=/home/vagrant'],
+}
+->
 exec { 'phpcpd':
     command => 'composer global require --dev "sebastian/phpcpd=*"',
     environment => ['COMPOSER_HOME=/home/vagrant/.composer'],
     cwd => '/home/vagrant/.composer',
     path    => '/usr/bin:/usr/local/bin:/home/vagrant/.composer/vendor/bin/',
     user => 'vagrant',
-    group => 'vagrant'
+    group => 'vagrant',
+    require => Exec['composer-update'],
 }
 ->
 exec { 'phpunit':
@@ -67,7 +74,8 @@ exec { 'phpunit':
     cwd => '/home/vagrant/.composer',
     path    => '/usr/bin:/usr/local/bin:/home/vagrant/.composer/vendor/bin/',
     user => 'vagrant',
-    group => 'vagrant'
+    group => 'vagrant',
+    require => Exec['composer-update']
 }
 
 mysql::db { 'magento':
@@ -123,3 +131,8 @@ service { 'iptables':
 }
 
 package {'git': ensure => present}
+
+file { 'security/limits.d/90-nproc.conf':
+    path => '/etc/security/limits.d/90-nproc.conf',
+    ensure => false
+}
