@@ -108,4 +108,5 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
 fi
 
 export PHP_IDE_CONFIG="serverName=magetwo.vg"
+export XDEBUG_CONFIG="idekey=PHPSTORM"
 export PATH=$PATH:/home/vagrant/.composer/vendor/bin:/home/vagrant
