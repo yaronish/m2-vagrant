@@ -7,21 +7,49 @@ else
     COMMAND=$1
 fi
 
+#Filesystem
+CE_DIR=m2ce
+EE_DIR=m2ee
+B2B_DIR=b2b
+
+#Magento installation settings
 DB_USER='magento'
 DB_PASS='123123q'
 DB='magento'
-ROOT='/var/www/html'
-HOST="magetwo.vg"
+DB_PREFIX=''
 MYSQL_HOST=localhost
-DIR_NAME='magetwo.vg'
-PFX=''
-cd ${ROOT}
+HOST="magetwo.vg"
 
+#XDEBUG SETTINGS
 export PHP_IDE_CONFIG="serverName=magetwo.my"
 export XDEBUG_CONFIG="idekey=PHPSTORM"
 export XDEBUG_CONFIG="remote_enable=1"
 
 echo "Start ${COMMAND}"
+
+DIR_PARAM='magetwo.vg'
+DIR_NAME='/var/www/html/'${DIR_PARAM}
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd ${ROOT}
+if [ ${COMMAND} = 'deploy' ]
+then
+    rm -rf ${DIR_NAME}/*
+    cp -Rf /vagrant/${CE_DIR}/* ${DIR_NAME}
+    echo 'Enter edition:'
+    read EDITION
+
+    if [ ${EDITION} = 'b2b' ]; then
+        cp -Rf /vagrant/${B2B_DIR}/* ${DIR_NAME}
+    fi
+
+    if [ ${EDITION} = 'ee' ] || [ ${EDITION} = 'b2b' ]; then
+        cp -Rf /vagrant/${EE_DIR}/* ${DIR_NAME}
+    fi
+
+    cd ${DIR_NAME}
+    chown -R vagrant.vagrant ./*
+    composer install
+fi
 
 if [ ${COMMAND} = 'install' ]
 then
@@ -33,10 +61,8 @@ then
     rm -rf ./pub/static/*
     php bin/magento setup:install --db-host=localhost --db-name=$DB --db-user=${DB_USER} --db-host=${MYSQL_HOST} --db-password=${DB_PASS} --backend-frontname=backend --admin-user=admin --admin-password=123123q --admin-email="admin@example.com" --admin-firstname=Store --admin-lastname=Owner --base-url="http://$HOST/" --language=en_US --timezone="America/Los_Angeles" --currency=USD --use-rewrites=1 --use-secure=0 --admin-use-security-key=0 --key="EncryptionKey"
 
-    mysql -u${DB_USER} -p${DB_PASS} -h${MYSQL_HOST} -e "UPDATE ${DB}.${PFX}core_config_data SET value = 0 WHERE path = 'admin/security/use_form_key';"
-    mysql -u${DB_USER} -p${DB_PASS} -h${MYSQL_HOST} -e "INSERT INTO ${DB}.${PFX}core_config_data(path, value) VALUES('admin/security/session_lifetime', 86400);"
-
-    #mysqldump -u${DB_USER} -p${DB_PASS} -h${MYSQL_HOST} --add-drop-database --databases ${DB} > /Users/yonischenko/work/sql/magetwo.sql
+    mysql -u${DB_USER} -p${DB_PASS} -h${MYSQL_HOST} -e "UPDATE ${DB}.${DB_PREFIX}core_config_data SET value = 0 WHERE path = 'admin/security/use_form_key';"
+    mysql -u${DB_USER} -p${DB_PASS} -h${MYSQL_HOST} -e "INSERT INTO ${DB}.${DB_PREFIX}core_config_data(path, value) VALUES('admin/security/session_lifetime', 86400);"
 fi
 
 if [ ${COMMAND} = 'update' ]

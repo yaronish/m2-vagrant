@@ -80,4 +80,7 @@
     ProxyPassReverse <%= @proxy_aliases %>
 <% end -%>
 <% end -%>
+    <IfModule dir_module>
+        DirectoryIndex index.php index.html
+    </IfModule>
 </VirtualHost>
