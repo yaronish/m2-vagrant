@@ -29,6 +29,7 @@ class { 'php':
     manage_repos => true,
     extensions => {
         'mcrypt' => {},
+        'bcmath' => {},
         'intl' => {},
         'gd' => {},
         'mbstring' => {},
@@ -87,11 +88,15 @@ exec {'mysql-flush-privileges':
     require => [Package['mysql-community-server']]
 }
 
+class {'apache':
+    process_user => 'vagrant'
+}
+
 apache::vhost { 'magetwo.vg':
     priority => '10',
     docroot => '/var/www/html/magetwo.vg',
-    docroot_owner => 'apache',
-    docroot_group => 'apache',
+    docroot_owner => 'vagrant',
+    docroot_group => 'vagrant',
     docroot_create => true,
     server_name => 'magetwo.vg',
     directory => '/var/www/html/magetwo.vg',
@@ -119,6 +124,11 @@ file { 'security/limits.d/90-nproc.conf':
 exec { 'composer-chown':
     command => 'chown vagrant.vagrant /usr/local/bin/composer',
     require => File['/usr/local/bin/composer']
+}
+
+exec { 'httpd-docroot-chown':
+    command => 'chown vagrant.vagrant /var/www/html',
+    require => Package['apache']
 }
 
 exec { 'composer-chmod':

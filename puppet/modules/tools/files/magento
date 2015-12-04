@@ -33,7 +33,8 @@ ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd ${ROOT}
 if [ ${COMMAND} = 'deploy' ]
 then
-    rm -rf ${DIR_NAME}/*
+    rm -rf ${DIR_NAME}
+    mkdir ${DIR_NAME}
     cp -Rf /vagrant/${CE_DIR}/* ${DIR_NAME}
     echo 'Enter edition:'
     read EDITION
@@ -46,9 +47,11 @@ then
         cp -Rf /vagrant/${EE_DIR}/* ${DIR_NAME}
     fi
 
-    cd ${DIR_NAME}
-    chown -R vagrant.vagrant ./*
-    composer install
+    if [ -d ${DIR_NAME} ]; then
+        cd ${DIR_NAME}
+        chown -R vagrant.vagrant ./*
+        composer install
+    fi
 fi
 
 if [ ${COMMAND} = 'install' ]
@@ -63,6 +66,7 @@ then
 
     mysql -u${DB_USER} -p${DB_PASS} -h${MYSQL_HOST} -e "UPDATE ${DB}.${DB_PREFIX}core_config_data SET value = 0 WHERE path = 'admin/security/use_form_key';"
     mysql -u${DB_USER} -p${DB_PASS} -h${MYSQL_HOST} -e "INSERT INTO ${DB}.${DB_PREFIX}core_config_data(path, value) VALUES('admin/security/session_lifetime', 86400);"
+    chown -R vagrant.vagrant ./*
 fi
 
 if [ ${COMMAND} = 'update' ]
