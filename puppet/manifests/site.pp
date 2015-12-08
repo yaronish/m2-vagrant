@@ -15,8 +15,9 @@ File {
 }
 
 class { 'yum':
-    extrarepo => 'epel remi_php56 mysql_community',
+    extrarepo => 'epel remi_php56 mysql_community remi',
     update => true,
+    before => Package['java-1.8.0-openjdk']
 }
 ->
 class { '::mysql::server':
@@ -42,7 +43,7 @@ class { 'php':
                 'remote_enable' => 1,
                 'remote_host' => 'hostmachine',
                 'idekey' => 'PHPSTORM',
-                'max_nesting_level' => 200
+                'max_nesting_level' => 300
             }
         }
     },
@@ -88,10 +89,6 @@ exec {'mysql-flush-privileges':
     require => [Package['mysql-community-server']]
 }
 
-class {'apache':
-    process_user => 'vagrant'
-}
-
 apache::vhost { 'magetwo.vg':
     priority => '10',
     docroot => '/var/www/html/magetwo.vg',
@@ -108,6 +105,11 @@ apache::vhost { 'magetwo.vg':
 }
 
 include baseconfig, tools, yum, apache, php
+
+exec { 'apache-user':
+    command => 'cat /etc/httpd/conf/httpd.conf | sed "s/User apache/User vagrant/" | sed "s/Group apache/Group vagrant/" > /etc/httpd/conf/httpd.conf',
+    require => Package['apache']
+}
 
 service { 'iptables':
     enable => false,
@@ -127,7 +129,7 @@ exec { 'composer-chown':
 }
 
 exec { 'httpd-docroot-chown':
-    command => 'chown vagrant.vagrant /var/www/html',
+    command => 'chown -R vagrant.vagrant /var/www/html',
     require => Package['apache']
 }
 
@@ -162,4 +164,22 @@ exec { 'phpunit':
     user => 'vagrant',
     group => 'vagrant',
     require => Exec['composer-update']
+}
+
+#REQUIRED for functional tests
+package {'java-1.8.0-openjdk':
+    ensure => true
+}
+
+package { 'xorg-x11-server-Xvfb':
+    ensure => true
+}
+
+package { 'firefox':
+    ensure => true
+}
+
+exec { 'get-selenium':
+    command => 'wget http://selenium-release.storage.googleapis.com/2.48/selenium-server-standalone-2.48.2.jar -O /vagrant/selenium-server-2.48.jar',
+    require => Package['java-1.8.0-openjdk']
 }

@@ -15,7 +15,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.trigger.before :up do
     run  "bash ./get-libs.sh"
   end
-
+  config.ssh.forward_x11 = true
   config.vm.box = box
   config.vm.box_check_update = false
   config.vm.hostname = hostname + '.' + domain
@@ -26,7 +26,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     v.customize ['modifyvm', :id, '--name', hostname, '--memory', ram]
   end
 
-  config.vm.synced_folder "../", "/vagrant", type: "nfs"
+  //config.vm.synced_folder "../", "/vagrant", type: "nfs"
 
   config.vm.provision :puppet do |puppet|
     puppet.manifests_path = 'puppet/manifests'
