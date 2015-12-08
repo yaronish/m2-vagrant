@@ -71,6 +71,39 @@ mysql::db { 'magento_integration_tests':
     require => [Package['mysql-community-server']]
 }
 
+apache::vhost { 'magetwo.vg':
+    priority => '10',
+    docroot => '/var/www/html/magetwo.vg',
+    docroot_owner => 'vagrant',
+    docroot_group => 'vagrant',
+    docroot_create => true,
+    server_name => 'magetwo.vg',
+    directory => '/var/www/html/magetwo.vg',
+    directory_allow_override => 'All',
+    directory_options => 'FollowSymLinks Multiviews',
+    require => Package['httpd'],
+    template => 'custom/virtualhost/vhost-cgi.conf.erb',
+    env_variables => ['PHP_IDE_CONFIG serverName=magetwo.vg', 'XDEBUG_CONFIG idekey=PHPSTORM'],
+}
+
+include baseconfig, tools, yum, apache, php
+
+
+package {'git': ensure => present}
+
+
+###APACHE customization
+exec { 'apache-user':
+    command => 'cat /etc/httpd/conf/httpd.conf | sed "s/User apache/User vagrant/" | sed "s/Group apache/Group vagrant/" > /etc/httpd/conf/httpd.conf',
+    require => Package['apache']
+}
+
+exec { 'httpd-docroot-chown':
+    command => 'chown -R vagrant.vagrant /var/www/html',
+    require => Package['apache']
+}
+
+###MYSQL customization
 exec {'mysql-grant-local-user':
     path => [ "/bin/", "/sbin/" , "/usr/bin/", "/usr/sbin/" ],
     command => 'mysql -uroot -e "grant all privileges on *.* to \'magento\'@\'localhost\' identified by \'123123q\' with grant option;"',
@@ -89,48 +122,11 @@ exec {'mysql-flush-privileges':
     require => [Package['mysql-community-server']]
 }
 
-apache::vhost { 'magetwo.vg':
-    priority => '10',
-    docroot => '/var/www/html/magetwo.vg',
-    docroot_owner => 'vagrant',
-    docroot_group => 'vagrant',
-    docroot_create => true,
-    server_name => 'magetwo.vg',
-    directory => '/var/www/html/magetwo.vg',
-    directory_allow_override => 'All',
-    directory_options => 'FollowSymLinks Multiviews',
-    require => Package['httpd'],
-    template => 'custom/virtualhost/vhost-cgi.conf.erb',
-    env_variables => ['PHP_IDE_CONFIG serverName=magetwo.vg', 'XDEBUG_CONFIG idekey=PHPSTORM'],
-}
-
-include baseconfig, tools, yum, apache, php
-
-exec { 'apache-user':
-    command => 'cat /etc/httpd/conf/httpd.conf | sed "s/User apache/User vagrant/" | sed "s/Group apache/Group vagrant/" > /etc/httpd/conf/httpd.conf',
-    require => Package['apache']
-}
-
-service { 'iptables':
-    enable => false,
-    ensure => false
-}
-
-package {'git': ensure => present}
-
-file { 'security/limits.d/90-nproc.conf':
-    path => '/etc/security/limits.d/90-nproc.conf',
-    ensure => false
-}
+###COMPOSER settings
 
 exec { 'composer-chown':
     command => 'chown vagrant.vagrant /usr/local/bin/composer',
     require => File['/usr/local/bin/composer']
-}
-
-exec { 'httpd-docroot-chown':
-    command => 'chown -R vagrant.vagrant /var/www/html',
-    require => Package['apache']
 }
 
 exec { 'composer-chmod':
@@ -164,6 +160,17 @@ exec { 'phpunit':
     user => 'vagrant',
     group => 'vagrant',
     require => Exec['composer-update']
+}
+
+###SYSTEM tunning
+file { 'security/limits.d/90-nproc.conf':
+    path => '/etc/security/limits.d/90-nproc.conf',
+    ensure => false
+}
+
+service { 'iptables':
+    enable => false,
+    ensure => false
 }
 
 #REQUIRED for functional tests
