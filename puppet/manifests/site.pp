@@ -93,13 +93,14 @@ package {'git': ensure => present}
 
 
 ###APACHE customization
-exec { 'apache-user':
-    command => 'cat /etc/httpd/conf/httpd.conf | sed "s/User apache/User vagrant/" | sed "s/Group apache/Group vagrant/" > /etc/httpd/conf/httpd.conf',
-    require => Package['apache']
-}
-
 exec { 'httpd-docroot-chown':
     command => 'chown -R vagrant.vagrant /var/www/html',
+    require => Package['apache']
+}
+->
+exec { 'apache-user':
+    command => 'cat /etc/httpd/conf/httpd.conf | sed "s/User apache/User vagrant/" | sed "s/Group apache/Group vagrant/" > /etc/httpd/conf/httpd.conf.back',
+    path => [ "/bin/", "/sbin/" , "/usr/bin/", "/usr/sbin/", "/usr/local/bin" ],
     require => Package['apache']
 }
 
