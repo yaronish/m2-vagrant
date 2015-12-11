@@ -1,4 +1,14 @@
-Exec { path => [ "/bin/", "/sbin/" , "/usr/bin/", "/usr/sbin/", "/usr/local/bin" ] }
+if $hostname == undef {
+    $hostname = "magetwo.vg"
+}
+if $user == undef {
+    $user = "vagrant"
+}
+if $group == undef {
+    $group = "vagrant"
+}
+
+Exec { path => [ "/bin/", "/sbin/" , "/usr/bin/", "/usr/sbin/", "/usr/local/bin", "/home/${user}/.composer/vendor/bin/" ] }
 
 stage { 'pre':
     before => Stage['main']
@@ -17,12 +27,14 @@ File {
 class { 'yum':
     extrarepo => 'epel remi_php56 mysql_community remi',
     update => true,
-    before => Package['java-1.8.0-openjdk']
+    before => Package['java-1.8.0-openjdk'],
+    stage => 'main'
 }
 ->
 class { '::mysql::server':
     package_name => 'mysql-community-server',
-    override_options => {'mysqld' => {'bind-address' => '0.0.0.0'}}
+    override_options => {'mysqld' => {'bind-address' => '0.0.0.0'}},
+    stage => 'main'
 }
 ->
 class { 'php':
@@ -52,7 +64,8 @@ class { 'php':
         'date.timezone' => 'UTC',
         'session.save_path' => '/tmp',
         'memory_limit' => '2G'
-    }
+    },
+    stage => 'main'
 }
 
 mysql::db { 'magento':
@@ -73,17 +86,17 @@ mysql::db { 'magento_integration_tests':
 
 apache::vhost { 'magetwo.vg':
     priority => '10',
-    docroot => '/var/www/html/magetwo.vg',
-    docroot_owner => 'vagrant',
-    docroot_group => 'vagrant',
+    docroot => "/var/www/html/${hostname}",
+    docroot_owner => $user,
+    docroot_group => $group,
     docroot_create => true,
-    server_name => 'magetwo.vg',
-    directory => '/var/www/html/magetwo.vg',
+    server_name => $hostname,
+    directory => "/var/www/html/${hostname}",
     directory_allow_override => 'All',
     directory_options => 'FollowSymLinks Multiviews',
     require => Package['httpd'],
     template => 'custom/virtualhost/vhost-cgi.conf.erb',
-    env_variables => ['PHP_IDE_CONFIG serverName=magetwo.vg', 'XDEBUG_CONFIG idekey=PHPSTORM'],
+    env_variables => ['PHP_IDE_CONFIG serverName=magentovm', 'XDEBUG_CONFIG idekey=PHPSTORM'],
 }
 
 include baseconfig, tools, yum, apache, php
@@ -94,31 +107,37 @@ package {'git': ensure => present}
 
 ###APACHE customization
 exec { 'httpd-docroot-chown':
-    command => 'chown -R vagrant.vagrant /var/www/html',
-    require => Package['apache']
+    command => "chown -R ${user}.${group} /var/www/html",
+    user => root,
+    group => root,
+    require => Package['apache'],
+    notify => Service['httpd']
 }
 ->
-exec { 'apache-user':
-    command => 'cat /etc/httpd/conf/httpd.conf | sed "s/User apache/User vagrant/" | sed "s/Group apache/Group vagrant/" > /etc/httpd/conf/httpd.conf.back',
-    path => [ "/bin/", "/sbin/" , "/usr/bin/", "/usr/sbin/", "/usr/local/bin" ],
-    require => Package['apache']
+file_line { 'replace apache user':
+    path => "/etc/httpd/conf/httpd.conf",
+    line => "User ${user}",
+    match => "User apache"
+}
+->
+file_line { 'replace apache group':
+    path => "/etc/httpd/conf/httpd.conf",
+    line => "Group ${group}",
+    match => "Group apache"
 }
 
 ###MYSQL customization
 exec {'mysql-grant-local-user':
-    path => [ "/bin/", "/sbin/" , "/usr/bin/", "/usr/sbin/" ],
     command => 'mysql -uroot -e "grant all privileges on *.* to \'magento\'@\'localhost\' identified by \'123123q\' with grant option;"',
     require => [Package['mysql-community-server']]
 }
 ->
 exec {'mysql-grant-remote-user':
-    path => [ "/bin/", "/sbin/" , "/usr/bin/", "/usr/sbin/" ],
     command => 'mysql -uroot -e "grant all privileges on *.* to \'magento_remote\'@\'%\' identified by \'123123q\' with grant option;"',
     require => [Package['mysql-community-server']]
 }
 ->
 exec {'mysql-flush-privileges':
-    path => [ "/bin/", "/sbin/" , "/usr/bin/", "/usr/sbin/" ],
     command => "mysql -uroot -e'flush privileges;'",
     require => [Package['mysql-community-server']]
 }
@@ -126,7 +145,7 @@ exec {'mysql-flush-privileges':
 ###COMPOSER settings
 
 exec { 'composer-chown':
-    command => 'chown vagrant.vagrant /usr/local/bin/composer',
+    command => "chown ${user}.${group} /usr/local/bin/composer",
     require => File['/usr/local/bin/composer']
 }
 
@@ -137,29 +156,26 @@ exec { 'composer-chmod':
 
 exec { 'composer-update':
     command => 'composer self-update',
-    environment => ['HOME=/home/vagrant'],
-    path    => '/usr/bin:/usr/local/bin:/home/vagrant/.composer/vendor/bin/',
-    user => 'vagrant',
+    environment => ["HOME=/home/${user}"],
+    user => $user,
     require => [Exec['composer-chmod'], Exec['composer-chown']]
 }
 
 exec { 'phpcpd':
     command => 'composer global require --dev "sebastian/phpcpd=*"',
-    environment => ['COMPOSER_HOME=/home/vagrant/.composer'],
-    cwd => '/home/vagrant/.composer',
-    path    => '/usr/bin:/usr/local/bin:/home/vagrant/.composer/vendor/bin/',
-    user => 'vagrant',
-    group => 'vagrant',
+    environment => ["COMPOSER_HOME=/home/${user}/.composer"],
+    cwd => "/home/${user}/.composer",
+    user => $user,
+    group => $group,
     require => Exec['composer-update'],
 }
 
 exec { 'phpunit':
     command => 'composer global require --dev "phpunit/phpunit=4.4.*"',
-    environment => ['COMPOSER_HOME=/home/vagrant/.composer'],
-    cwd => '/home/vagrant/.composer',
-    path    => '/usr/bin:/usr/local/bin:/home/vagrant/.composer/vendor/bin/',
-    user => 'vagrant',
-    group => 'vagrant',
+    environment => ["COMPOSER_HOME=/home/${user}/.composer"],
+    cwd => "/home/${user}/.composer",
+    user => $user,
+    group => $group,
     require => Exec['composer-update']
 }
 
@@ -188,6 +204,6 @@ package { 'firefox':
 }
 
 exec { 'get-selenium':
-    command => 'wget http://selenium-release.storage.googleapis.com/2.48/selenium-server-standalone-2.48.2.jar -O /vagrant/selenium-server-2.48.jar',
+    command => "wget http://selenium-release.storage.googleapis.com/2.48/selenium-server-standalone-2.48.2.jar -O /${user}/selenium-server-2.48.jar",
     require => Package['java-1.8.0-openjdk']
 }

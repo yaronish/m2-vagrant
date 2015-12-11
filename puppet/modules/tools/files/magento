@@ -1,4 +1,8 @@
 #!/bin/bash
+HOSTNAME=$MAGENTO_ENV_HOSTNAME
+USER=$MAGENTO_ENV_USER
+GROUP=$MAGENTO_ENV_GROUP
+
 if [ -z $1 ]
 then
     echo "Usage: magento [deploy|install|update|clean|tests:unit|tests:integrity|tests:static|tests:integration|selenium:run]"
@@ -18,16 +22,15 @@ DB_PASS='123123q'
 DB='magento'
 DB_PREFIX=''
 MYSQL_HOST=localhost
-HOST="magetwo.vg"
 
 #XDEBUG SETTINGS
-export PHP_IDE_CONFIG="serverName=magetwo.my"
+export PHP_IDE_CONFIG="serverName=${hostname}"
 export XDEBUG_CONFIG="idekey=PHPSTORM"
-export XDEBUG_CONFIG="remote_enable=1"
+export XDEBUG_CONFIG="remote_enable=0"
 
 echo "Start ${COMMAND}"
 
-DIR_PARAM='magetwo.vg'
+DIR_PARAM=$HOSTNAME
 DIR_NAME='/var/www/html/'${DIR_PARAM}
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd ${ROOT}
@@ -35,19 +38,19 @@ if [ ${COMMAND} = 'deploy' ]
 then
     rm -rf ${DIR_NAME}
     mkdir ${DIR_NAME}
-    cp -r /vagrant/${CE_DIR}/* ${DIR_NAME}
-    cp -r /vagrant/${CE_DIR}/.[^.]* ${DIR_NAME}
+    cp -r /${USER}/${CE_DIR}/* ${DIR_NAME}
+    cp -r /${USER}/${CE_DIR}/.[^.]* ${DIR_NAME}
     echo 'Enter edition:'
     read EDITION
 
     if [ ${EDITION} = 'b2b' ]; then
-        cp -r /vagrant/${B2B_DIR}/* ${DIR_NAME}
-        cp -r /vagrant/${B2B_DIR}/.[^.]* ${DIR_NAME}
+        cp -r /${USER}/${B2B_DIR}/* ${DIR_NAME}
+        cp -r /${USER}/${B2B_DIR}/.[^.]* ${DIR_NAME}
     fi
 
     if [ ${EDITION} = 'ee' ] || [ ${EDITION} = 'b2b' ]; then
-        cp -r /vagrant/${EE_DIR}/* ${DIR_NAME}
-        cp -r /vagrant/${EE_DIR}/.[^.]* ${DIR_NAME}
+        cp -r /${USER}/${EE_DIR}/* ${DIR_NAME}
+        cp -r /${USER}/${EE_DIR}/.[^.]* ${DIR_NAME}
     fi
 
     if [ -d ${DIR_NAME} ]; then
@@ -64,7 +67,7 @@ then
     rm -rf ./app/etc/config.php
     rm -rf ./app/etc/env.php
     rm -rf ./pub/static/*
-    php bin/magento setup:install --db-host=localhost --db-name=$DB --db-user=${DB_USER} --db-host=${MYSQL_HOST} --db-password=${DB_PASS} --backend-frontname=backend --admin-user=admin --admin-password=123123q --admin-email="admin@example.com" --admin-firstname=Store --admin-lastname=Owner --base-url="http://$HOST/" --language=en_US --timezone="America/Los_Angeles" --currency=USD --use-rewrites=1 --use-secure=0 --admin-use-security-key=0 --key="EncryptionKey"
+    php bin/magento setup:install --db-host=localhost --db-name=$DB --db-user=${DB_USER} --db-host=${MYSQL_HOST} --db-password=${DB_PASS} --backend-frontname=backend --admin-user=admin --admin-password=123123q --admin-email="admin@example.com" --admin-firstname=Store --admin-lastname=Owner --base-url="http://$HOSTNAME/" --language=en_US --timezone="America/Los_Angeles" --currency=USD --use-rewrites=1 --use-secure=0 --admin-use-security-key=0 --key="EncryptionKey"
 
     mysql -u${DB_USER} -p${DB_PASS} -h${MYSQL_HOST} -e "UPDATE ${DB}.${DB_PREFIX}core_config_data SET value = 0 WHERE path = 'admin/security/use_form_key';"
     mysql -u${DB_USER} -p${DB_PASS} -h${MYSQL_HOST} -e "INSERT INTO ${DB}.${DB_PREFIX}core_config_data(path, value) VALUES('admin/security/session_lifetime', 86400);"
@@ -107,7 +110,7 @@ fi
 
 if [ ${COMMAND} = 'tests:static' ]
 then
-    find /vagrant/b2b -type f | grep php | sed 's/\/vagrant\/b2b\///' > ${DIR_NAME}/dev/tests/static/testsuite/Magento/Test/Php/_files/changed_files_b2b.txt
+    find /${USER}/b2b -type f | grep php | sed "s/\/${USER}\/b2b\///" > ${DIR_NAME}/dev/tests/static/testsuite/Magento/Test/Php/_files/changed_files_b2b.txt
     cd ${DIR_NAME}/dev/tests/static
     phpunit
 fi
@@ -122,5 +125,5 @@ fi
 
 if [ ${COMMAND} = 'selenium:run' ]
 then
-    java -jar /vagrant/selenium-server-2.48.jar
+    java -jar /${USER}/selenium-server-2.48.jar
 fi

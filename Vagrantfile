@@ -1,12 +1,13 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-box      = 'puppetlabs/centos-6.6-64-puppet'
-#box      = 'bento/centos-6.7'
-hostname = 'magetwo'
-domain   = 'vg'
+hostname = 'magetwo.vg'
+user     = 'vagrant'
+group    = 'vagrant'
+
 ip       = '192.168.0.200'
 ram      = '3000'
+box      = 'puppetlabs/centos-6.6-64-puppet'
 
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
@@ -18,7 +19,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.ssh.forward_x11 = true
   config.vm.box = box
   config.vm.box_check_update = false
-  config.vm.hostname = hostname + '.' + domain
+  config.vm.hostname = hostname
   config.vm.network "private_network", ip: ip
 
   config.vm.box_version = '1.0.1'
@@ -33,7 +34,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     puppet.manifest_file = 'site.pp'
     puppet.module_path = 'puppet/modules'
     puppet.facter = {
-        'hostname' => hostname + '.' + domain
+        'hostname' => hostname,
+        'user' => user,
+        'group' => group
     }
   end
 

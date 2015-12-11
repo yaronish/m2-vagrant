@@ -86,7 +86,7 @@ alias ll='ls -la'
 alias la='ls -A'
 alias l='ls -CF'
 alias rm='rm -rf'
-alias gohome='cd /var/www/html/magetwo.vg'
+
 # Add an "alert" alias for long running commands.  Use like so:
 #   sleep 10; alert
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
@@ -107,6 +107,11 @@ if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
     . /etc/bash_completion
 fi
 
-export PHP_IDE_CONFIG="serverName=magetwo.vg"
-export XDEBUG_CONFIG="idekey=PHPSTORM"
-export PATH=$PATH:/home/vagrant/.composer/vendor/bin:/home/vagrant
+export MAGENTO_ENV_HOSTNAME='<%= @hostname %>'
+export MAGENTO_ENV_USER='<%= @user %>'
+export MAGENTO_ENV_GROUP='<%= @group %>'
+export PHP_IDE_CONFIG='serverName=<%= @hostname %>'
+export XDEBUG_CONFIG='idekey=PHPSTORM'
+export PATH=$PATH:/home/<%= @user %>/.composer/vendor/bin:/home/<%= @user %>
+
+alias gohome='cd /var/www/html/<%= @hostname %>'
