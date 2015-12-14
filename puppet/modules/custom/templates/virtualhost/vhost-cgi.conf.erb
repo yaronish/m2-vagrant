@@ -27,6 +27,7 @@
     <FilesMatch "\.(phtml|php)$">
         SetHandler application/x-httpd-php5
     </FilesMatch>
+    Timeout 18000
     ScriptAlias /local-bin /usr/bin
     Action application/x-httpd-php5 /local-bin/php-cgi
 
