@@ -6,7 +6,7 @@ user     = 'vagrant'
 group    = 'vagrant'
 
 ip       = '192.168.0.200'
-ram      = '3000'
+ram      = '4096'
 box      = 'puppetlabs/centos-6.6-64-puppet'
 
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
