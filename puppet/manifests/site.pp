@@ -156,28 +156,11 @@ exec { 'composer-chmod':
 
 exec { 'composer-update':
     command => 'composer self-update',
-    environment => ["HOME=/home/${user}"],
+    environment => ["HOME=/home/${user}", "COMPOSER_HOME=/home/${user}/.composer"],
     user => $user,
     require => [Exec['composer-chmod'], Exec['composer-chown']]
 }
 
-exec { 'phpcpd':
-    command => 'composer global require --dev "sebastian/phpcpd=*"',
-    environment => ["COMPOSER_HOME=/home/${user}/.composer"],
-    cwd => "/home/${user}/.composer",
-    user => $user,
-    group => $group,
-    require => Exec['composer-update'],
-}
-
-exec { 'phpunit':
-    command => 'composer global require --dev "phpunit/phpunit=4.4.*"',
-    environment => ["COMPOSER_HOME=/home/${user}/.composer"],
-    cwd => "/home/${user}/.composer",
-    user => $user,
-    group => $group,
-    require => Exec['composer-update']
-}
 
 ###SYSTEM tunning
 file { 'security/limits.d/90-nproc.conf':
