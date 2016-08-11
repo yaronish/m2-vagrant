@@ -17,6 +17,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     run  "bash ./get-libs.sh"
   end
   config.ssh.forward_x11 = true
+  config.ssh.insert_key = false
   config.vm.box = box
   config.vm.box_check_update = false
   config.vm.hostname = hostname

@@ -25,7 +25,7 @@ File {
 }
 
 class { 'yum':
-    extrarepo => 'epel remi_php70 mysql_community remi',
+    extrarepo => 'epel remi_php56 mysql_community remi',
     update => true,
     before => Package['java-1.8.0-openjdk'],
     stage => 'main'
